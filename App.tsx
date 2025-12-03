@@ -18,7 +18,7 @@ const App = () => {
   });
   
   // App Data
-  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [firebaseReminders, setFirebaseReminders] = useState<Reminder[]>([]);
   
   // Voice & Interaction
   const [lastDetectedPerson, setLastDetectedPerson] = useState<string | null>(null);
@@ -45,7 +45,7 @@ const App = () => {
   // 1. Firebase Subscription
   useEffect(() => {
     const unsubscribe = subscribeToReminders((newReminders) => {
-      setReminders(newReminders);
+      setFirebaseReminders(newReminders);
     });
     return () => unsubscribe();
   }, []);
@@ -277,36 +277,79 @@ const App = () => {
   // --- HELPERS ---
 
   const getBackgroundStyle = () => {
-    const imgs = {
-      clearDay: 'url("https://images.unsplash.com/photo-1622396481328-9b1b78cdd9fd?q=80&w=1920&auto=format&fit=crop")',
-      clearNight: 'url("https://images.unsplash.com/photo-1472552944129-b035e9ea43cc?q=80&w=1920&auto=format&fit=crop")',
-      cloudyDay: 'url("https://images.unsplash.com/photo-1534088568595-a066f410bcda?q=80&w=1920&auto=format&fit=crop")',
-      cloudyNight: 'url("https://images.unsplash.com/photo-1536746803623-cef8708094dd?q=80&w=1920&auto=format&fit=crop")',
-      rainDay: 'url("https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?q=80&w=1920&auto=format&fit=crop")',
-      rainNight: 'url("https://images.unsplash.com/photo-1508624217470-5ef0f947d8be?q=80&w=1920&auto=format&fit=crop")',
-      storm: 'url("https://images.unsplash.com/photo-1605727216801-e27ce1d0cc28?q=80&w=1920&auto=format&fit=crop")'
+    // High Quality 4k/HD Unsplash Images mapping
+    const imageUrls = {
+      // Clear
+      dayClear: 'https://images.unsplash.com/photo-1601297183305-6df142704ea2?q=80&w=2560&auto=format&fit=crop', // Bright Blue Sky
+      nightClear: 'https://images.unsplash.com/photo-1506318137071-a8bcbf67cc77?q=80&w=2560&auto=format&fit=crop', // Starry Night
+      
+      // Clouds
+      dayCloudy: 'https://images.unsplash.com/photo-1595867865334-7290000e395a?q=80&w=2560&auto=format&fit=crop', // Fluffy White Clouds
+      nightCloudy: 'https://images.unsplash.com/photo-1536746803623-cef8708094dd?q=80&w=2560&auto=format&fit=crop', // Dark Clouds/Moon
+      
+      // Fog
+      dayFog: 'https://images.unsplash.com/photo-1487621167305-5d248087c724?q=80&w=2560&auto=format&fit=crop', // Misty Forest
+      nightFog: 'https://images.unsplash.com/photo-1517544845501-bb782da759d3?q=80&w=2560&auto=format&fit=crop', // Spooky Night Fog
+      
+      // Rain
+      dayRain: 'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?q=80&w=2560&auto=format&fit=crop', // Rain drops on glass (Day)
+      nightRain: 'https://images.unsplash.com/photo-1504608524841-42fe6f032b4b?q=80&w=2560&auto=format&fit=crop', // Rain on window with city lights
+      
+      // Storm
+      storm: 'https://images.unsplash.com/photo-1605727216801-e27ce1d0cc28?q=80&w=2560&auto=format&fit=crop', // Lightning
+      
+      // Snow (Just in case)
+      daySnow: 'https://images.unsplash.com/photo-1477601263568-180e2c6d046e?q=80&w=2560&auto=format&fit=crop',
+      nightSnow: 'https://images.unsplash.com/photo-1483104879057-3331608b60c8?q=80&w=2560&auto=format&fit=crop'
     };
 
-    let bgImage = imgs.clearDay;
+    let bgImage = imageUrls.dayClear;
     const isNight = weather.is_day === 0;
     const code = weather.weathercode;
 
-    if (isNight) {
-      if (code <= 1) bgImage = imgs.clearNight;
-      else if (code <= 3) bgImage = imgs.cloudyNight;
-      else if (code >= 95) bgImage = imgs.storm;
-      else bgImage = imgs.rainNight;
+    // WMO Weather Code Interpretation
+    // 0: Clear sky
+    // 1, 2, 3: Mainly clear, partly cloudy, and overcast
+    // 45, 48: Fog and depositing rime fog
+    // 51, 53, 55: Drizzle: Light, moderate, and dense intensity
+    // 56, 57: Freezing Drizzle: Light and dense intensity
+    // 61, 63, 65: Rain: Slight, moderate and heavy intensity
+    // 66, 67: Freezing Rain: Light and heavy intensity
+    // 71, 73, 75: Snow fall: Slight, moderate, and heavy intensity
+    // 77: Snow grains
+    // 80, 81, 82: Rain showers: Slight, moderate, and violent
+    // 85, 86: Snow showers slight and heavy
+    // 95: Thunderstorm: Slight or moderate
+    // 96, 99: Thunderstorm with slight and heavy hail
+
+    if (code === 0 || code === 1) {
+      // Clear
+      bgImage = isNight ? imageUrls.nightClear : imageUrls.dayClear;
+    } else if (code === 2 || code === 3) {
+      // Cloudy
+      bgImage = isNight ? imageUrls.nightCloudy : imageUrls.dayCloudy;
+    } else if (code === 45 || code === 48) {
+      // Fog
+      bgImage = isNight ? imageUrls.nightFog : imageUrls.dayFog;
+    } else if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
+      // Rain / Drizzle
+      bgImage = isNight ? imageUrls.nightRain : imageUrls.dayRain;
+    } else if ((code >= 71 && code <= 77) || code === 85 || code === 86) {
+      // Snow
+      bgImage = isNight ? imageUrls.nightSnow : imageUrls.daySnow;
+    } else if (code >= 95) {
+      // Storm
+      bgImage = imageUrls.storm;
     } else {
-      if (code <= 1) bgImage = imgs.clearDay;
-      else if (code <= 3) bgImage = imgs.cloudyDay;
-      else if (code >= 95) bgImage = imgs.storm;
-      else bgImage = imgs.rainDay;
+      // Fallback
+      bgImage = isNight ? imageUrls.nightClear : imageUrls.dayClear;
     }
 
     return { 
-      backgroundImage: bgImage, 
+      backgroundImage: `url("${bgImage}")`, 
       backgroundSize: 'cover', 
-      backgroundPosition: 'center', 
+      backgroundPosition: 'center',
+      transition: 'background-image 1.5s ease-in-out' // Smooth fade
     };
   };
 
@@ -320,9 +363,37 @@ const App = () => {
     };
   };
 
+  // Static (Cyclical) Reminders Generation
+  const getStaticReminders = (): Reminder[] => {
+    const day = currentTime.getDay(); // 0 = Sunday, 1 = Monday...
+    const hour = currentTime.getHours();
+    const staticList: Reminder[] = [];
+
+    // Monday (1)
+    if (day === 1 && hour >= 19) {
+      staticList.push({ type: 'alert', text: 'Marmitas: André não tem aula amanhã.', time: '19:00' });
+    }
+    
+    // Tuesday (2)
+    if (day === 2) {
+      staticList.push({ type: 'info', text: 'André não vai à escola.', time: 'Dia todo' });
+      staticList.push({ type: 'action', text: 'Vôlei: Sair com Iago.', time: '16:40' });
+    }
+    
+    // Thursday (4)
+    if (day === 4) {
+      staticList.push({ type: 'action', text: 'Vôlei: Sair de bicicleta.', time: '16:30' });
+    }
+
+    return staticList;
+  };
+
   const today = getDateInfo(0);
   const yesterday = getDateInfo(-1);
   const tomorrow = getDateInfo(1);
+
+  // Combine Static and Firebase Reminders
+  const allReminders = [...getStaticReminders(), ...firebaseReminders];
 
   return (
     <main 
@@ -425,7 +496,7 @@ const App = () => {
           height: isMd ? '100%' : `${sidebarSize}px`
         }}
       >
-        <NewsSidebar reminders={reminders} />
+        <NewsSidebar reminders={allReminders} />
       </section>
 
       {/* Chef Modal */}
