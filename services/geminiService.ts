@@ -1,7 +1,7 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { addReminderToDB } from "./firebase";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: "gen-lang-client-0108694645" });
 
 // --- CHEF ASSISTANT ---
 export const getChefSuggestion = async (userInput: string): Promise<string> => {
@@ -72,8 +72,11 @@ export const processVoiceCommand = async (userAudioTranscript: string): Promise<
         Seu nome é Smart Home.
         Você tem uma personalidade masculina, calma e eficiente.
         Responda sempre em Português do Brasil de forma concisa e natural.
-        Se o usuário pedir para adicionar um lembrete, USE a ferramenta 'add_reminder'.
-        Se o usuário apenas cumprimentar, responda educadamente.`
+        
+        INSTRUÇÕES ESPECÍFICAS:
+        - Se o usuário disser "Ok Google" ou "Olá Google", responda normalmente, mas lembre-se que você é o Smart Home.
+        - Se o usuário pedir para adicionar um lembrete, USE a ferramenta 'add_reminder'.
+        - Mantenha um tom de voz calmo e prestativo.`
       }
     });
 

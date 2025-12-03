@@ -72,8 +72,17 @@ const App = () => {
 
       if (isListening || isProcessing) return; // Don't trigger if already busy
 
-      // Wake Words
-      if (transcript.includes("smart home") || transcript.includes("olá smart home")) {
+      // Wake Words logic
+      const wakeWords = [
+        "smart home", 
+        "olá smart home", 
+        "ok google", 
+        "olá google", 
+        "ola google"
+      ];
+
+      if (wakeWords.some(word => transcript.includes(word))) {
+        console.log("Wake word detected!");
         activateAssistant();
       }
     };
